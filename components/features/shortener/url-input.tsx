@@ -33,6 +33,9 @@ type AssetPreview = {
   previewUrl: string | null;
 };
 
+const DEFAULT_CDN_EXPIRES_IN_SECONDS = 7 * 24 * 60 * 60;
+const DEFAULT_CDN_CACHE_TTL_SECONDS = 24 * 60 * 60;
+
 type InputAreaProps = {
   url: string;
   error: string | null;
@@ -56,6 +59,20 @@ function formatFileSize(size: number) {
   if (size < 1024) return `${size} B`;
   if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
   return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function getClipboardFile(dataTransfer: DataTransfer) {
+  const directFile = dataTransfer.files?.[0];
+  if (directFile) return directFile;
+
+  for (const item of Array.from(dataTransfer.items || [])) {
+    if (item.kind !== "file") continue;
+
+    const file = item.getAsFile();
+    if (file) return file;
+  }
+
+  return null;
 }
 
 function LinkUrlInput({
@@ -128,7 +145,15 @@ function CdnAssetInput({
     fileInputRef.current?.click();
   };
 
-  const handleTextPaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+  const handleAssetPaste = (event: React.ClipboardEvent<HTMLInputElement>) => {
+    const pastedFile = getClipboardFile(event.clipboardData);
+    if (pastedFile) {
+      event.preventDefault();
+      handleFile(pastedFile);
+      inputRef.current?.focus();
+      return;
+    }
+
     const pastedText = event.clipboardData.getData("text");
     if (!pastedText) return;
 
@@ -187,7 +212,10 @@ function CdnAssetInput({
         ref={fileInputRef}
         type="file"
         className="sr-only"
-        onChange={(event) => handleFile(event.target.files?.[0])}
+        onChange={(event) => {
+          handleFile(event.target.files?.[0]);
+          event.currentTarget.value = "";
+        }}
       />
 
       {assetPreview?.previewUrl ? (
@@ -240,9 +268,9 @@ function CdnAssetInput({
             type="text"
             value={displayValue}
             onFocus={onFocus}
-            onPaste={handleTextPaste}
+            onPaste={handleAssetPaste}
             onChange={(event) => onUrlChange(event.target.value)}
-            placeholder="Drop asset URL or image here..."
+            placeholder="Drop or paste an asset, image, or URL..."
             className={cn(
               "w-full bg-transparent text-text-base placeholder:text-text-muted/20 outline-none text-sm md:text-base font-light tracking-wide py-1",
               "caret-[color:var(--shortener-accent)]",
@@ -408,8 +436,12 @@ export default function UrlInput() {
   const [randomFlavor, setRandomFlavor] = useState<RandomFlavor>("text");
   const [randomPreview, setRandomPreview] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
-  const [cdnExpiresInSeconds, setCdnExpiresInSeconds] = useState<number | null>(null);
-  const [cdnCacheTtlSeconds, setCdnCacheTtlSeconds] = useState(24 * 60 * 60);
+  const [cdnExpiresInSeconds, setCdnExpiresInSeconds] = useState<number | null>(
+    DEFAULT_CDN_EXPIRES_IN_SECONDS,
+  );
+  const [cdnCacheTtlSeconds, setCdnCacheTtlSeconds] = useState(
+    DEFAULT_CDN_CACHE_TTL_SECONDS,
+  );
 
   // Branding part
   const [brandingTitle, setBrandingTitle] = useState("");
@@ -483,8 +515,8 @@ export default function UrlInput() {
     setRandomFlavor("text");
     setAliasType("random");
     setVisibility("public");
-    setCdnExpiresInSeconds(null);
-    setCdnCacheTtlSeconds(24 * 60 * 60);
+    setCdnExpiresInSeconds(DEFAULT_CDN_EXPIRES_IN_SECONDS);
+    setCdnCacheTtlSeconds(DEFAULT_CDN_CACHE_TTL_SECONDS);
     setBrandingTitle("");
     setBrandingDescription("");
     setBrandingImageUrl("");
