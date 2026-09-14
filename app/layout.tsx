@@ -20,6 +20,7 @@ const SITE_INFO = {
 };
 
 export const metadata: Metadata = {
+  applicationName: "LNNK",
   title: {
     default: SITE_INFO.title,
     template: `%s | LNNK`,
@@ -54,8 +55,14 @@ export const metadata: Metadata = {
     telephone: false,
   },
   metadataBase: new URL(SITE_INFO.url),
+  manifest: "/manifest.webmanifest",
   alternates: {
     canonical: "/",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "LNNK",
+    statusBarStyle: "black-translucent",
   },
   icons: {
     icon: [
