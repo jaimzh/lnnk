@@ -1,22 +1,34 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 
-const MONGODB_URI = process.env.MONGODB_URI!;
+type MongooseCache = {
+  conn: typeof mongoose | null;
+  promise: Promise<typeof mongoose> | null;
+};
 
-if (!MONGODB_URI) {
-  throw new Error('Please define the MONGODB_URI environment variable');
-}
-
-let cached = (global as any).mongoose || { conn: null, promise: null };
+const mongooseGlobal = globalThis as typeof globalThis & {
+  mongoose?: MongooseCache;
+};
+const cached = (mongooseGlobal.mongoose ??= { conn: null, promise: null });
 
 async function dbConnect() {
   if (cached.conn) return cached.conn;
 
-  if (!cached.promise) {
-    cached.promise = mongoose.connect(MONGODB_URI).then((m) => m);
+  const uri = process.env.MONGODB_URI;
+  if (!uri) {
+    throw new Error("Please define the MONGODB_URI environment variable");
   }
-  
-  cached.conn = await cached.promise;
-  return cached.conn;
+
+  if (!cached.promise) {
+    cached.promise = mongoose.connect(uri, { serverSelectionTimeoutMS: 5000 });
+  }
+
+  try {
+    cached.conn = await cached.promise;
+    return cached.conn;
+  } catch (error) {
+    cached.promise = null;
+    throw error;
+  }
 }
 
 export default dbConnect;

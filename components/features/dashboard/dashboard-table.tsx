@@ -55,18 +55,33 @@ type DashboardRow = {
 export async function DashboardTable(props: DashboardTableProps) {
   const baseUrl = await getBaseUrl();
 
-  await dbConnect();
-
   const params = await props.searchParams;
   const currentPage = Number(params?.page || props.codePageNumber || 1);
 
   const LIMIT = 6;
   const skip = (currentPage - 1) * LIMIT;
 
-  const [urls, cdns] = await Promise.all([
-    Url.find({ visibility: "public" }).sort({ createdAt: -1 }).lean(),
-    Cdn.find({ visibility: "public", status: "ready" }).sort({ createdAt: -1 }).lean(),
-  ]);
+  let urls: LeanUrlRow[];
+  let cdns: LeanCdnRow[];
+  try {
+    await dbConnect();
+    [urls, cdns] = await Promise.all([
+      Url.find({ visibility: "public" }).sort({ createdAt: -1 }).lean<LeanUrlRow[]>(),
+      Cdn.find({ visibility: "public", status: "ready" }).sort({ createdAt: -1 }).lean<LeanCdnRow[]>(),
+    ]);
+  } catch (error) {
+    console.error("Unable to load public link history:", error);
+    return (
+      <div id="dashboard-table" className="w-full px-5 py-6">
+        <div role="status" className="mx-auto max-w-4xl rounded-xl border border-border bg-card p-8 text-center">
+          <p className="text-sm font-medium">History is temporarily unavailable</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            We couldn&apos;t connect to the database. Please try again later.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   const rows: DashboardRow[] = [
     ...(urls as LeanUrlRow[]).map((url) => ({

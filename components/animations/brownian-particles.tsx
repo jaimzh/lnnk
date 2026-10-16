@@ -2,9 +2,12 @@
 
 import { useHeroContext } from "@/context/HeroContext";
 import React, { useEffect, useRef } from "react";
+import { usePathname } from "next/navigation";
 
 export default function BrownianParticles() {
   const { isHeroShortened } = useHeroContext();
+  const pathname = usePathname();
+  const isAuthPage = pathname === "/login" || pathname === "/signup";
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   useEffect(() => {
@@ -127,8 +130,9 @@ export default function BrownianParticles() {
   return (
     <canvas
       ref={canvasRef}
+      aria-hidden="true"
       className={`fixed top-0 left-0 w-full h-full z-0 transition-opacity duration-1000 pointer-events-none ${
-        isHeroShortened ? "opacity-80" : "opacity-0"
+        isHeroShortened || isAuthPage ? "opacity-80" : "opacity-0"
       }`}
     />
   );
