@@ -1,5 +1,12 @@
 import { z } from "zod";
 
+export const loginSchema = z.object({
+  username: z.string().trim().toLowerCase().min(1).max(32),
+  password: z.string().min(1).refine(
+    (password) => new TextEncoder().encode(password).length <= 72,
+  ),
+});
+
 export const signupSchema = z
   .object({
     username: z
