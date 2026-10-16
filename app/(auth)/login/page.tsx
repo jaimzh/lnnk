@@ -11,9 +11,17 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-export default function LoginPage() {
+export default async function LoginPage({ searchParams }: {
+  searchParams: Promise<{ signup?: string }>;
+}) {
+  const { signup } = await searchParams;
   return (
     <AuthCard title="Welcome back" description="Log in to manage your projects, API keys, and images.">
+      {signup === "success" && (
+        <p role="status" className="mb-5 text-sm text-muted-foreground">
+          Your account has been created.
+        </p>
+      )}
       <LoginForm />
       <p className="mt-6 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{" "}

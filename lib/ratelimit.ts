@@ -7,3 +7,10 @@ export const shortenRateLimit = new Ratelimit({
   analytics: true,
   prefix: "@upstash/ratelimit/shorten",
 });
+
+export const signupRateLimit = new Ratelimit({
+  redis: Redis.fromEnv(),
+  limiter: Ratelimit.slidingWindow(5, "15 m"),
+  analytics: false,
+  prefix: "@upstash/ratelimit/signup",
+});
